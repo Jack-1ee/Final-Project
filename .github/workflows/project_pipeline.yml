@@ -1,0 +1,59 @@
+name: Final Project
+
+# 設定觸發條件：只要 Push 到 main 分支，或手動按按鈕就會跑
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. 把你的程式碼抓下來
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # 2. 依照題目要求，使用 curl 下載測試圖檔
+    - name: Download Test Image (Kimberly.bmp)
+      run: |
+        curl -o Kimberly.bmp https://raw.githubusercontent.com/cychiang-ntpu/mmsp-2025-final-jpeg/main/Kimberly.bmp
+        ls -l Kimberly.bmp
+
+    # 3. 編譯 C 程式
+    - name: Compile Code
+      run: |
+        gcc encoder.c -o encoder -lm
+        gcc decoder.c -o decoder -lm
+        echo "Compilation Success!"
+
+    # 4. 執行 Method 0 (BMP Check)
+    - name: Run Method 0 (BMP IO Check)
+      run: |
+        # 建立一個資料夾來放輸出，保持整潔
+        mkdir -p artifacts_method0
+        
+        echo "Running Encoder 0..."
+        ./encoder 0 Kimberly.bmp artifacts_method0/R.txt artifacts_method0/G.txt artifacts_method0/B.txt artifacts_method0/dim.txt
+        
+        echo "Running Decoder 0..."
+        ./decoder 0 artifacts_method0/ResKimberly.bmp artifacts_method0/R.txt artifacts_method0/G.txt artifacts_method0/B.txt artifacts_method0/dim.txt
+
+    # 5. 驗證 Method 0 (Diff Check)
+    - name: Verify Method 0 Results
+      run: |
+        echo "Comparing original and reconstructed BMP..."
+        if cmp -s Kimberly.bmp artifacts_method0/ResKimberly.bmp; then
+          echo "SUCCESS: Files are identical."
+        else
+          echo "FAILURE: Files are different!"
+          exit 1
+        fi
+
+    # 6. 上傳 Artifacts
+    - name: Upload Method 0 Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: Method0-Results
+        path: artifacts_method0/
