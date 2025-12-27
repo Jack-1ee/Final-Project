@@ -43,18 +43,14 @@ int main(int argc, char *argv[]) {
             &yPels,   // Y 解析度
             &clrUsed, // 使用顏色數
             &clrImp   // 重要顏色數
-);
-
-        // 3.計算Header需要的值
-        int padding = (4 - (width *3) %4) %4;
-        int rowSize = width *3 + padding;   // 每列byte數 含padding
-        int imageSize = rowSize * height;
-        int fileSize = 54 + imageSize;  // 14+40+Data
+            );
 
         // 4.寫Header
+        int padding = (4 - (width *3) %4) %4;
+
         BITMAPFILEHEADER fileHeader = {0};  // 歸0
             fileHeader.bfType = 0x4D42; // "BM"
-            fileHeader.bfSize = fileSize;
+            fileHeader.bfSize = bfSize;
             fileHeader.bfOffBits = 54;  // Header 14+40
 
         BITMAPINFOHEADER infoHeader = {0};  // 歸0
@@ -63,7 +59,11 @@ int main(int argc, char *argv[]) {
             infoHeader.biHeight = height;
             infoHeader.biPlanes = 1;
             infoHeader.biBitCount = 24; // RGB 3byte=24bits
-            infoHeader.biSizeImage = imageSize;
+            infoHeader.biSizeImage = biSizeImage;
+            infoHeader.biXPelsPerMeter = xPels;
+            infoHeader.biYPelsPerMeter = yPels;
+            infoHeader.biClrUsed = clrUsed;
+            infoHeader.biClrImportant = clrImp;
         
         // 寫入Header
         fwrite(&fileHeader, sizeof(BITMAPFILEHEADER), 1, fpOut);
