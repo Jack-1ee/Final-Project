@@ -45,7 +45,11 @@ int main(int argc, char *argv[]) {
         int width = infoHeader.biWidth;
         int height = infoHeader.biHeight;
 
-        fprintf(fpDim, "%d %d\n", width, height);    // 寫入尺寸資訊
+        fprintf(fpDim, "%d %d %d %d\n", 
+            width, 
+            height, 
+            infoHeader.biXPelsPerMeter, 
+            infoHeader.biYPelsPerMeter);    // 寫入尺寸資訊
 
         // 3.計算padding
         int padding = (4 - (width *3) %4) %4;   // 實際byte數=width*3 padding補到4的倍數
@@ -82,6 +86,6 @@ int main(int argc, char *argv[]) {
     printf("Method 0 Encoding Done.\n");
 
     }
-    
+
     return 0;
 }

@@ -33,8 +33,8 @@ int main(int argc, char *argv[]) {
         }
 
         // 2.讀取尺寸
-        int width, height;
-        fscanf(fpDim, "%d %d", &width, &height);
+        int width, height, xPels, yPels;
+        fscanf(fpDim, "%d %d %d %d", &width, &height, &xPels, &yPels);
 
         // 3.計算Header需要的值
         int padding = (4 - (width *3) %4) %4;
