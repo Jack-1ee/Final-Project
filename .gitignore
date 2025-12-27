@@ -1,0 +1,22 @@
+# 忽略編譯出來的執行檔
+*.exe
+*.o
+
+# 忽略 Method 0 的中間產物 txt
+R.txt
+G.txt
+B.txt
+dim.txt
+
+# 忽略所有生成的 BMP 圖檔 (保留原始輸入圖檔)
+*.bmp
+!Kimberly.bmp
+
+# 忽略我們剛剛建立的輸出資料夾
+Method0_Output/
+Method1_Output/
+Method2_Output/
+Method3_Output/
+
+# 忽略 VS Code 的設定檔 (選用)
+.vscode/
