@@ -36,9 +36,62 @@ int main(int argc, char *argv[]) {
         int width, height;
         fscanf(fpDim, "%d %d", &width, &height);
 
-        // 3.建立Header
+        // 3.計算Header需要的值
+        int padding = (4 - (width *3) %4) %4;
+        int rowSize = width *3 + padding;   // 每列byte數 含padding
+        int imageSize = rowSize * height;
+        int fileSize = 54 + imageSize;  // 14+40+Data
 
+        // 4.寫Header
+        BITMAPFILEHEADER fileHeader = {0};  // 歸0
+            fileHeader.bfType = 0x4D42; // "BM"
+            fileHeader.bfSize = fileSize;
+            fileHeader.bfOffBits = 54;  // Header 14+40
+
+        BITMAPINFOHEADER infoHeader = {0};  // 歸0
+            infoHeader.biSize = 40;
+            infoHeader.biWidth = width;
+            infoHeader.biHeight = height;
+            infoHeader.biPlanes = 1;
+            infoHeader.biBitCount = 24; // RGB 3byte=24bits
+            infoHeader.biSizeImage = imageSize;
+        
+        // 寫入Header
+        fwrite(&fileHeader, sizeof(BITMAPFILEHEADER), 1, fpOut);
+        fwrite(&infoHeader, sizeof(BITMAPINFOHEADER), 1, fpOut);
+
+        // 5.讀TXT寫入BMP
+        int rVal, gVal, bVal;   // 用來fscanf
+        unsigned char pixel[3]; // 用來fwrite
+        unsigned char padBuf[3] = {0, 0, 0};    // Padding 全0
+
+        for ( int i = 0; i < height; i++){
+            for (int j = 0; j < width; j++){
+                fscanf(fpR, "%d", &rVal);   // 文字檔讀數值
+                fscanf(fpG, "%d", &gVal);   
+                fscanf(fpB, "%d", &bVal);
+                
+                pixel[0] = (unsigned char)bVal; // 轉回BGR順序
+                pixel[1] = (unsigned char)gVal;
+                pixel[2] = (unsigned char)rVal;
+
+                fwrite(pixel, 1, 3, fpOut); // 寫3個byte
+            }
+            // 寫入Padding
+            if (padding > 0){
+                fwrite(padBuf, 1, padding, fpOut);
+            } 
+        }
+        
+        printf("Method 0 Decoding Done. Output: %s\n", argv[2]);
+
+        fclose(fpOut);  // 關檔
+        fclose(fpR);
+        fclose(fpG);
+        fclose(fpB);
+        fclose(fpDim);
     }
 
+    return 0;
 }
 

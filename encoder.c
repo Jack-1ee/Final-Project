@@ -54,8 +54,8 @@ int main(int argc, char *argv[]) {
         unsigned char padBuf[3];    // 讀padding
 
         // 4. 讀pixel資料
-        for (int i=0; i< height; i++){
-            for (int j=0; j< width; j++){
+        for (int i = 0; i< height; i++){
+            for (int j = 0; j< width; j++){
                 fread(pixel, 1, 3, fpIn);   // 讀3個byte到pixel
                 fprintf(fpR, "%d ", pixel[2]);  // R
                 fprintf(fpG, "%d ", pixel[1]);  // G
@@ -80,7 +80,8 @@ int main(int argc, char *argv[]) {
     fclose(fpDim);
     
     printf("Method 0 Encoding Done.\n");
-    }
 
+    }
+    
     return 0;
 }
