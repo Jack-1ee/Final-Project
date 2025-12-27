@@ -45,8 +45,9 @@ int main(int argc, char *argv[]) {
         int width = infoHeader.biWidth;
         int height = infoHeader.biHeight;
 
-        fprintf(fpDim, "%d %d %d %d %d %d\n", 
+        fprintf(fpDim, "%d %d %d %d %d %d %d %d\n", 
             width, height, 
+            fileHeader.bfSize, infoHeader.biSizeImage,
             infoHeader.biXPelsPerMeter, infoHeader.biYPelsPerMeter,
             infoHeader.biClrUsed, infoHeader.biClrImportant);    // 寫入尺寸資訊
 

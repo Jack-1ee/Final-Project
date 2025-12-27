@@ -33,10 +33,12 @@ int main(int argc, char *argv[]) {
         }
 
         // 2.讀取尺寸
-        int width, height, xPels, yPels, clrUsed, clrImp;
-        fscanf(fpDim, "%d %d %d %d %d %d", 
+        int width, height, bfSize, biSizeImage, xPels, yPels, clrUsed, clrImp;
+        fscanf(fpDim, "%d %d %d %d %d %d %d %d", 
             &width, 
             &height, 
+            &bfSize,      // 檔案大小
+            &biSizeImage, // 影像資料大小
             &xPels,   // X 解析度
             &yPels,   // Y 解析度
             &clrUsed, // 使用顏色數
