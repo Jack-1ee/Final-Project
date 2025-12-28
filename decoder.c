@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
 
     int method = atoi(argv[1]); // ASCII to integer
     
-    // method 0: encode
+    // method 0: TXT to BMP
     if (method == 0){
         if (argc != 7){
             printf("Error: Method 0 needs 6 arguments.\n");
