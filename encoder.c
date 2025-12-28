@@ -3,31 +3,45 @@
 #include "bmp.h"
 
 // 2D DCT 函數 執行 8x8 DCT 轉換
+//利用 DCT 分離性 Y = C * X * C^T
+double dct_matrix[8][8];       // 存 C 矩陣
+double dct_matrix_T[8][8];     // 存 C^T (轉置) 矩陣
+
+// 1. 初始化 DCT 矩陣 (只在 main 一開始呼叫一次)
+void init_dct_matrix() {
+    for (int j = 0; j < 8; j++) {
+        double alpha = (j == 0) ? (1.0 / sqrt(2.0)) : 1.0;
+        for (int i = 0; i < 8; i++) {
+            dct_matrix[j][i] = 0.5 * alpha * cos((2 * i + 1) * j * M_PI / 16.0);    // C[j][i] 公式
+            dct_matrix_T[i][j] = dct_matrix[j][i];  // 順便存轉置矩陣 C^T
+        }
+    }
+}
+
+// 2. 矩陣乘法版 perform_DCT
+// Output = C * Input * C^T
 void perform_DCT(double input[8][8], double output[8][8]) {
-    double alpha_u, alpha_v, sum;
+    double temp[8][8] = {0}; // 中間產物
 
-    for (int u = 0; u < 8; u++) {
-        for (int v = 0; v < 8; v++) {
-            
-            // 1. 設定係數 Alpha (u, v = 0 時是 1/根號2，其他是 1)
-            if (u == 0) alpha_u = 1.0 / sqrt(2.0);
-            else alpha_u = 1.0;
-
-            if (v == 0) alpha_v = 1.0 / sqrt(2.0);
-            else alpha_v = 1.0;
-
-            sum = 0.0;
-
-            // 2. 雙重加總 (Sigma)
-            for (int x = 0; x < 8; x++) {
-                for (int y = 0; y < 8; y++) {
-                    // 餘弦波計算
-                    sum += input[x][y] * cos((2 * x + 1) * u * M_PI / 16.0) * cos((2 * y + 1) * v * M_PI / 16.0);
-                }
+    // 第一步: Temp = C * Input (矩陣乘法)
+    for (int i = 0; i < 8; i++) {       // Row of C
+        for (int j = 0; j < 8; j++) {   // Col of Input
+            double sum = 0.0;
+            for (int k = 0; k < 8; k++) {
+                sum += dct_matrix[i][k] * input[k][j];
             }
+            temp[i][j] = sum;
+        }
+    }
 
-            // 3. 寫入結果 (C(u)C(v)/4 * sum)
-            output[u][v] = 0.25 * alpha_u * alpha_v * sum;
+    // 第二步: Output = Temp * C^T (矩陣乘法)
+    for (int i = 0; i < 8; i++) {       // Row of Temp
+        for (int j = 0; j < 8; j++) {   // Col of C^T
+            double sum = 0.0;
+            for (int k = 0; k < 8; k++) {
+                sum += temp[i][k] * dct_matrix_T[k][j];
+            }
+            output[i][j] = sum;
         }
     }
 }
@@ -53,6 +67,9 @@ void write_qt_txt(const char* filename, const int qt[8][8]) {
 
 int main(int argc, char *argv[]) {
     
+    // 初始化DCT矩陣
+    init_dct_matrix();
+
     // 檢查是否有指令
     if(argc <=2){
         printf("Usage: %s <method> <argc...>\n", argv[0]);
@@ -144,9 +161,9 @@ int main(int argc, char *argv[]) {
         }
         
         // 1.輸出量化表
-        write_qt_txt(argv[2], std_lum_qt);   // 亮度
-        write_qt_txt(argv[3], std_chr_qt);   // 色度 Cb
-        write_qt_txt(argv[4], std_chr_qt);   // 色度 Cr
+        write_qt_txt(argv[3], std_lum_qt);   // 亮度
+        write_qt_txt(argv[4], std_chr_qt);   // 色度 Cb
+        write_qt_txt(argv[5], std_chr_qt);   // 色度 Cr
 
         // 2.讀取圖片
         FILE *fpIn = fopen(argv[2], "rb");  // rb=read binary
