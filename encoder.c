@@ -7,7 +7,8 @@
 double dct_matrix[8][8];       // 存 C 矩陣
 double dct_matrix_T[8][8];     // 存 C^T (轉置) 矩陣
 
-// 1. 初始化 DCT 矩陣 (只在 main 一開始呼叫一次)
+// 1.初始化 DCT 矩陣 (只在 main 一開始呼叫一次)
+// 先算好cos
 void init_dct_matrix() {
     for (int j = 0; j < 8; j++) {
         double alpha = (j == 0) ? (1.0 / sqrt(2.0)) : 1.0;
@@ -18,12 +19,12 @@ void init_dct_matrix() {
     }
 }
 
-// 2. 矩陣乘法版 perform_DCT
+// 2.矩陣乘法版 perform_DCT
 // Output = C * Input * C^T
 void perform_DCT(double input[8][8], double output[8][8]) {
     double temp[8][8] = {0}; // 中間產物
 
-    // 第一步: Temp = C * Input (矩陣乘法)
+    // 2.1.Temp = C * Input (矩陣乘法)
     for (int i = 0; i < 8; i++) {       // Row of C
         for (int j = 0; j < 8; j++) {   // Col of Input
             double sum = 0.0;
@@ -34,7 +35,7 @@ void perform_DCT(double input[8][8], double output[8][8]) {
         }
     }
 
-    // 第二步: Output = Temp * C^T (矩陣乘法)
+    // 2.2.Output = Temp * C^T (矩陣乘法)
     for (int i = 0; i < 8; i++) {       // Row of Temp
         for (int j = 0; j < 8; j++) {   // Col of C^T
             double sum = 0.0;
@@ -236,6 +237,12 @@ int main(int argc, char *argv[]) {
         // 4.RGB to YCbCr to DCT to Quantization
         // 8x8區塊處理
         for (int r = 0; r < absHeight; r += 8 ){
+
+            // 每 100 行印一次進度，不然會以為當機
+            if (r % 100 == 0) {
+                printf("Decoding Row: %d / %d\n", r, absHeight);
+            }
+
             for (int c = 0; c < width; c += 8){
                 
                 // 4.1.RGB to YCbCr
