@@ -1,0 +1,51 @@
+name: Final Project CI/CD
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. 下載程式碼
+    - uses: actions/checkout@v4
+
+    # 2. 編譯 Encoder 和 Decoder (開啟 -O3 優化)
+    - name: Compile Code
+      run: |
+        gcc -O3 encoder.c -o encoder -lm
+        gcc -O3 decoder.c -o decoder -lm
+
+    # 3. 測試 Method 1 (Baseline)
+    # 這裡會讀取根目錄的 Qt 表格和 dim.txt
+    - name: Run Method 1 (DCT/IDCT)
+      run: |
+        # Encoder 產生中間檔 (.raw)
+        ./encoder 1 Kimberly.bmp Qt_Y.txt Qt_Cb.txt Qt_Cr.txt dim.txt qF_Y.raw qF_Cb.raw qF_Cr.raw eF_Y.raw eF_Cb.raw eF_Cr.raw
+        # Decoder 讀取中間檔並還原圖片 (QResKimberly.bmp)
+        ./decoder 1 QResKimberly.bmp Kimberly.bmp Qt_Y.txt Qt_Cb.txt Qt_Cr.txt dim.txt qF_Y.raw qF_Cb.raw qF_Cr.raw
+
+    # 4. 測試 Method 2 (Binary Mode) - 這是你的滿分關鍵
+    - name: Run Method 2 (RLE/ZigZag Binary)
+      run: |
+        # Encoder 產生壓縮檔 (rle_code.bin)
+        ./encoder 2 Kimberly.bmp binary rle_code.bin
+        # Decoder 解壓縮還原圖片 (QRes_Method2.bmp)
+        ./decoder 2 QRes_Method2.bmp binary rle_code.bin
+
+    # 5. 上傳 Artifacts (助教評分用的產出物)
+    - name: Upload Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: Final-Project-Artifacts
+        path: |
+          encoder
+          decoder
+          QResKimberly.bmp
+          QRes_Method2.bmp
+          rle_code.bin
+          dim.txt
