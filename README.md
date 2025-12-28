@@ -91,3 +91,34 @@
 [ 輸出: QRes_M2_Ascii.bmp ]
 (驗證: 應與 Method 1(a) 的 QResKimberly.bmp 一致)
 ```
+
+#### Method 2(b):Binary 模式 (Final Product)
+
+**目標**：輸出緊湊的二進位壓縮檔，計算最終壓縮率。
+
+```
+[ Encoder (Mode 2 - binary) ]
+      ⬇
+[ ZigZag 掃描 ] ➜ [ DC/AC 編碼 ] ➜ [ Bit/Byte Packing ]
+      ⬇
+[ 輸出: rle_code.bin (二進位壓縮檔) ]
+      ⬇
+[ Decoder (Mode 2 - binary) ]
+      ⬇
+[ 讀取 Binary ] ➜ [ 解碼還原係數 ] ➜ [ 呼叫 Method 1 核心 ]
+      ⬇
+[ 輸出: QRes_M2_Bin.bmp ]
+(驗證: 應與 Method 1(a) 的 QResKimberly.bmp 一致)
+```
+
+## 2. 工作日誌 (Work Log)
+
+**第一天12/25**：
+
+**第二天12/26**：
+
+**第三天12/27**：
+
+**第四天12/28**：
+
+由於12/26才考完期末考第8科，故較晚開始執行期末作業，會再好好檢討自己的時間規劃‧
