@@ -125,14 +125,26 @@
 
 ## 3. GitHub Artifacts
 
-**ResKimberly_M0.bmp**	Method 0	      格式轉換測試，應與原圖一致。
+**ResKimberly_M0.bmp**	
 
-**QResKimberly.bmp**	Method 1(a)	      基礎 JPEG 壓縮結果，會有失真。
+Method 0	      格式轉換測試，應與原圖一致。
 
-**ResKimberly_M1.bmp**	Method 1(b)	      加上誤差補償的結果，應與原圖一致。
+**QResKimberly.bmp**	
 
-**QRes_M2_Ascii.bmp**	Method 2(a)	      從 ASCII RLE 檔解碼的圖片，應與 QResKimberly.bmp 一致。
+Method 1(a)	      基礎 JPEG 壓縮結果，會有失真。
 
-**QRes_M2_Bin.bmp**	Method 2(b)	      從 Binary 壓縮檔解碼的圖片，應與 QResKimberly.bmp 一致。
+**ResKimberly_M1.bmp**	
 
-**rle_code.bin**	      Method 2(b)	      最終產出的二進位壓縮檔，用於計算壓縮率。
+Method 1(b)	      加上誤差補償的結果，應與原圖一致。
+
+**QRes_M2_Ascii.bmp**	
+
+Method 2(a)	      從 ASCII RLE 檔解碼的圖片，應與 QResKimberly.bmp 一致。
+
+**QRes_M2_Bin.bmp**	
+
+Method 2(b)	      從 Binary 壓縮檔解碼的圖片，應與 QResKimberly.bmp 一致。
+
+**rle_code.bin**	      
+
+Method 2(b)	      最終產出的二進位壓縮檔，用於計算壓縮率。
