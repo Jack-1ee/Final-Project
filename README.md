@@ -1,7 +1,7 @@
 # 多媒體訊號處理期末專題 (Multimedia Signal Processing Final Project)
 
-**學號:** (請在此填寫您的學號)  
-**姓名:** (請在此填寫您的姓名)
+**學號:** 411172018  
+**姓名:** 李希均
 
 ---
 
@@ -70,3 +70,24 @@
 ```
 
 ### Method 2: 熵編碼 (Entropy Coding)
+
+此階段將量化後的係數進行 DPCM 與 RLE 編碼，並分為 ASCII (2a) 與 Binary (2b) 兩種模式。
+
+#### Method 2(a): ASCII 模式 (Debug Use)
+
+**目標**：輸出人類可讀的 RLE 文字檔，用於除錯與邏輯驗證。
+
+```
+[ Encoder (Mode 2 - ascii) ]
+      ⬇
+[ ZigZag 掃描 ] ➜ [ DC: DPCM ] ➜ [ AC: RLE ]
+      ⬇
+[ 輸出: rle_code.txt (可視化文字檔) ]
+      ⬇
+[ Decoder (Mode 2 - ascii) ]
+      ⬇
+[ 解析文字檔 ] ➜ [ 反 RLE & 反 ZigZag ] ➜ [ 呼叫 Method 1 核心 ]
+      ⬇
+[ 輸出: QRes_M2_Ascii.bmp ]
+(驗證: 應與 Method 1(a) 的 QResKimberly.bmp 一致)
+```
