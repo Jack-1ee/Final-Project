@@ -27,7 +27,7 @@
 (驗證: 與原圖 Kimberly.bmp 完全一致)
 ```
 
-### Method 1:JPEG 基礎壓縮與誤差補償 (Baseline & Lossless)
+### Method 1: JPEG 基礎壓縮與誤差補償 (Baseline & Lossless)
 
 此階段分為兩部分：1(a) 失真壓縮 與 1(b) 誤差補償無損還原。
 
@@ -50,3 +50,23 @@
 (驗證: 觀察 SQNR 與壓縮失真效果)
 ```
 
+#### Method 1(b): 誤差補償 (Error Residual)
+
+**目標**：計算量化誤差 eF = F - qF * Qt，實現無損壓縮驗證。
+
+```
+[ Encoder (Mode 1) ]
+      ⬇
+[ 計算量化誤差 eF ] ➜ [ 輸出: 誤差檔 (eF_*.raw) ]
+      ⬇
+[ Decoder (Mode 1b) ]
+      ⬇
+[ 讀取 qF_*.raw + eF_*.raw ] ➜ [ 重組頻率域數值 (F = qF*Qt + eF) ]
+      ⬇
+[ 反轉換 IDCT & 後處理 ]
+      ⬇
+[ 輸出: ResKimberly_M1.bmp ]
+(驗證: 加上誤差值後，應與原圖 Kimberly.bmp 完全一致)
+```
+
+### Method 2: 熵編碼 (Entropy Coding)
