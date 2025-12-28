@@ -121,4 +121,18 @@
 
 **第四天12/28**：建立 method 2 + debug method 1 + debug method 2 + 確立 workflow + 一大堆debug + 寫readme
 
-由於12/26才考完期末考第8科，故較晚開始執行期末作業，會再好好檢討自己的時間規劃‧
+由於12/26才考完期末考第8科，故較晚開始執行期末作業，會再好好檢討自己的時間規劃。
+
+## 3. GitHub Artifacts
+
+**ResKimberly_M0.bmp**	Method 0	      格式轉換測試，應與原圖一致。
+
+**QResKimberly.bmp**	Method 1(a)	      基礎 JPEG 壓縮結果，會有失真。
+
+**ResKimberly_M1.bmp**	Method 1(b)	      加上誤差補償的結果，應與原圖一致。
+
+**QRes_M2_Ascii.bmp**	Method 2(a)	      從 ASCII RLE 檔解碼的圖片，應與 QResKimberly.bmp 一致。
+
+**QRes_M2_Bin.bmp**	Method 2(b)	      從 Binary 壓縮檔解碼的圖片，應與 QResKimberly.bmp 一致。
+
+**rle_code.bin**	      Method 2(b)	      最終產出的二進位壓縮檔，用於計算壓縮率。
