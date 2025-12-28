@@ -113,12 +113,12 @@
 
 ## 2. 工作日誌 (Work Log)
 
-**第一天12/25**：
+**第一天12/25**：建立 .h 檔 + 確立檔案架構 
 
-**第二天12/26**：
+**第二天12/26**：查詢資料 + 建立 method 0 + debug method 0 + 嘗試建立 workflow
 
-**第三天12/27**：
+**第三天12/27**：建立 method 1 + debug method 1 + 繼續查詢資料 (透過1D-Separable DCT加速運算)
 
-**第四天12/28**：
+**第四天12/28**：建立 method 2 + debug method 1 + debug method 2 + 確立 workflow + 一大堆debug + 寫readme
 
 由於12/26才考完期末考第8科，故較晚開始執行期末作業，會再好好檢討自己的時間規劃‧
