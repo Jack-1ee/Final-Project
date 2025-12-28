@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "bmp.h"
 
 // 控制範圍0-255
@@ -446,6 +447,157 @@ int main(int argc, char *argv[]) {
         }
         
         free(imgBuffer);
+    }
+
+    else if (method == 2) {
+        if (argc != 5) {
+            printf("Usage: decoder 2 <output.bmp> <ascii/binary> <input_rle>\n");
+            return 1;
+        }
+
+        char *outFile = argv[2];
+        char *mode = argv[3];
+        char *inFile = argv[4];
+        int is_binary = (strcmp(mode, "binary") == 0);
+
+        FILE *fpIn = is_binary ? fopen(inFile, "rb") : fopen(inFile, "r");
+        if (!fpIn) { perror("Input error"); return 1; }
+
+        int width, height;
+        if (is_binary) {
+            fread(&width, 4, 1, fpIn);
+            fread(&height, 4, 1, fpIn);
+        } else {
+            fscanf(fpIn, "%d %d", &width, &height);
+        }
+        int absHeight = abs(height);
+
+        unsigned char *imgBuffer = (unsigned char *)malloc(width * absHeight * 3);
+        
+        int prevDC[3] = {0, 0, 0};
+        const int (*qTables[3])[8] = {std_lum_qt, std_chr_qt, std_chr_qt};
+        
+        // 暫存三個通道的 Spatial Domain (8x8 Block)
+        double blk_all[3][8][8]; 
+        int quantized_block[64];
+
+        printf("Method 2 Decoding (%s)...\n", mode);
+
+        for (int r = 0; r < absHeight; r += 8) {
+            if(r % 80 == 0) printf("Decoding Row %d / %d\n", r, absHeight); // 進度條
+
+            for (int c = 0; c < width; c += 8) {
+                
+                // 依序還原 Y, Cb, Cr
+                for (int k = 0; k < 3; k++) {
+                    
+                    // 清空 Buffer
+                    for(int z=0; z<64; z++) quantized_block[z] = 0;
+
+                    // A. 讀取 DPCM DC
+                    int diffDC = 0;
+                    if (is_binary) {
+                        short sDiff;
+                        fread(&sDiff, 2, 1, fpIn);
+                        diffDC = sDiff;
+                    } else {
+                        // ASCII: 跳過 ($m,$n, Ch) 讀 diff
+                        char ch;
+                        while(fscanf(fpIn, "%c", &ch) && ch != ')');
+                        int skip, val;
+                        fscanf(fpIn, "%d %d", &skip, &val); // skip=0, val=diff
+                        diffDC = val;
+                    }
+
+                    // 還原 DC
+                    prevDC[k] += diffDC;
+                    quantized_block[0] = prevDC[k];
+
+                    // B. RLE 解碼 (AC)
+                    int index = 1;
+                    while (index < 64) {
+                        int skip, val;
+                        if (is_binary) {
+                            unsigned char s; short v;
+                            fread(&s, 1, 1, fpIn); fread(&v, 2, 1, fpIn);
+                            skip = s; val = v;
+                            if (skip == 0 && val == 0) break; // EOB
+                        } else {
+                            // ASCII: 檢查是否換行
+                            char check;
+                            do { check = fgetc(fpIn); } while (check == ' ');
+                            if (check == '\n' || check == '\r' || check == EOF) break;
+                            ungetc(check, fpIn);
+                            fscanf(fpIn, "%d %d", &skip, &val);
+                        }
+                        index += skip;
+                        if (index >= 64) break;
+                        quantized_block[index] = val;
+                        index++;
+                    }
+
+                    // C. 反 ZigZag + 反量化
+                    double dct[8][8];
+                    for (int z = 0; z < 64; z++) {
+                        int u = zigzag_order[z] / 8;
+                        int v = zigzag_order[z] % 8;
+                        dct[u][v] = (double)quantized_block[z] * qTables[k][u][v];
+                    }
+
+                    // D. IDCT (結果存入 blk_all[k])
+                    perform_IDCT(dct, blk_all[k]); 
+                } 
+
+                // E. 轉 RGB 填入 imgBuffer
+                for(int i=0; i<8; i++){
+                    for(int j=0; j<8; j++){
+                        if (r+i < absHeight && c+j < width) {
+                            double Y  = blk_all[0][i][j] + 128.0;
+                            double Cb = blk_all[1][i][j];
+                            double Cr = blk_all[2][i][j];
+
+                            double R = Y + 1.402 * Cr;
+                            double G = Y - 0.344136 * Cb - 0.714136 * Cr;
+                            double B = Y + 1.772 * Cb;
+
+                            int idx = ((r+i) * width + (c+j)) * 3;
+                            imgBuffer[idx]     = CLAMP(B);
+                            imgBuffer[idx + 1] = CLAMP(G);
+                            imgBuffer[idx + 2] = CLAMP(R);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 寫出 BMP
+        FILE *fpOut = fopen(outFile, "wb");
+        if(!fpOut) { perror("Output error"); return 1; }
+
+        BITMAPFILEHEADER fileHeader = {0};
+        fileHeader.bfType = 0x4D42;
+        fileHeader.bfOffBits = 54;
+        fileHeader.bfSize = 54 + width * absHeight * 3;
+
+        BITMAPINFOHEADER infoHeader = {0};
+        infoHeader.biSize = 40;
+        infoHeader.biWidth = width;
+        infoHeader.biHeight = height;
+        infoHeader.biPlanes = 1;
+        infoHeader.biBitCount = 24;
+        
+        fwrite(&fileHeader, sizeof(BITMAPFILEHEADER), 1, fpOut);
+        fwrite(&infoHeader, sizeof(BITMAPINFOHEADER), 1, fpOut);
+
+        unsigned char padBuf[3] = {0};
+        int padding = (4 - (width * 3) % 4) % 4;
+        for(int i=0; i<absHeight; i++){
+            fwrite(imgBuffer + (i * width * 3), 1, width * 3, fpOut);
+            if(padding > 0) fwrite(padBuf, 1, padding, fpOut);
+        }
+        
+        fclose(fpOut); fclose(fpIn); free(imgBuffer);
+        printf("Decoding Done: %s\n", outFile);
     }
 
     return 0;

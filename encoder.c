@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "bmp.h"
 
 // 2D DCT 函數 執行 8x8 DCT 轉換
@@ -342,6 +343,167 @@ int main(int argc, char *argv[]) {
         fclose(fpQF_Y); fclose(fpQF_Cb); fclose(fpQF_Cr);
         fclose(fpEF_Y); fclose(fpEF_Cb); fclose(fpEF_Cr);
         printf("Method 1 Encoding Done.\n");
+    }
+
+    else if (method == 2) {
+        if (argc != 5) {
+            printf("Usage: encoder 2 <bmp> <ascii/binary> <output>\n");
+            return 1;
+        }
+
+        char *mode = argv[3]; // "ascii" or "binary"
+        char *outFile = argv[4];
+        int is_binary = (strcmp(mode, "binary") == 0); // 需要 #include <string.h>
+
+        // 1. 讀取 BMP (利用 bmp.h 的 struct)
+        FILE *fpIn = fopen(argv[2], "rb");
+        if (!fpIn) { perror("Input error"); return 1; }
+        
+        BITMAPFILEHEADER fileHeader;
+        BITMAPINFOHEADER infoHeader;
+        fread(&fileHeader, sizeof(BITMAPFILEHEADER), 1, fpIn);
+        fread(&infoHeader, sizeof(BITMAPINFOHEADER), 1, fpIn);
+        
+        int width = infoHeader.biWidth;
+        int height = infoHeader.biHeight;
+        int absHeight = abs(height);
+        
+        unsigned char *imgBuffer = (unsigned char *)malloc(width * absHeight * 3);
+        int padding = (4 - (width * 3) % 4) % 4;
+        unsigned char padBuf[3];
+        
+        // 跳到數據區
+        fseek(fpIn, fileHeader.bfOffBits, SEEK_SET);
+
+        for (int j = 0; j < absHeight; j++) {
+            fread(imgBuffer + (j * width * 3), 1, width * 3, fpIn);
+            if (padding > 0) fread(padBuf, 1, padding, fpIn);
+        }
+        fclose(fpIn);
+
+        // 2. 開啟輸出檔
+        FILE *fpOut = is_binary ? fopen(outFile, "wb") : fopen(outFile, "w");
+        if (!fpOut) { perror("Output error"); return 1; }
+
+        // 寫入 Header (寬高)
+        if (is_binary) {
+            fwrite(&width, 4, 1, fpOut);
+            fwrite(&height, 4, 1, fpOut);
+        } else {
+            fprintf(fpOut, "%d %d\n", width, height);
+        }
+
+        // 運算變數
+        double blk[3][8][8]; // YCbCr Buffer
+        double dct[3][8][8]; // DCT Buffer
+        int prevDC[3] = {0, 0, 0}; // DPCM 紀錄
+        
+        // 直接使用 bmp.h 裡的 static const 表
+        const int (*qTables[3])[8] = {std_lum_qt, std_chr_qt, std_chr_qt};
+        const char *chNames[3] = {"Y", "Cb", "Cr"};
+
+        printf("Method 2 Encoding (%s)...\n", mode);
+
+        // 3. 處理 Block
+        for (int r = 0; r < absHeight; r += 8) {
+            for (int c = 0; c < width; c += 8) {
+                
+                // 3.1 RGB -> YCbCr -> DCT
+                for (int i = 0; i < 8; i++) {
+                    for (int j = 0; j < 8; j++) {
+                        int r_pos = (r + i < absHeight) ? r + i : absHeight - 1;
+                        int c_pos = (c + j < width) ? c + j : width - 1;
+                        int idx = (r_pos * width + c_pos) * 3;
+                        
+                        double B = imgBuffer[idx];
+                        double G = imgBuffer[idx + 1];
+                        double R = imgBuffer[idx + 2];
+                        
+                        blk[0][i][j] = (0.299 * R + 0.587 * G + 0.114 * B) - 128;
+                        blk[1][i][j] = (-0.1687 * R - 0.3313 * G + 0.5 * B);
+                        blk[2][i][j] = (0.5 * R - 0.4187 * G - 0.0813 * B);
+                    }
+                }
+                
+                // DCT
+                for(int k=0; k<3; k++) perform_DCT(blk[k], dct[k]);
+
+                // 3.2 量化 + ZigZag + DPCM + RLE
+                for (int k = 0; k < 3; k++) { 
+                    int quantized_block[64]; 
+
+                    // A. 量化 + ZigZag
+                    for (int z = 0; z < 64; z++) {
+                        // 使用 bmp.h 裡的 zigzag_order
+                        int u = zigzag_order[z] / 8;
+                        int v = zigzag_order[z] % 8;
+                        quantized_block[z] = (int)round(dct[k][u][v] / qTables[k][u][v]);
+                    }
+
+                    // B. DPCM (DC)
+                    int currentDC = quantized_block[0];
+                    int diffDC = currentDC - prevDC[k];
+                    prevDC[k] = currentDC; 
+
+                    // C. 寫入檔案
+                    if(is_binary) {
+                        short sDiff = (short)diffDC;
+                        fwrite(&sDiff, 2, 1, fpOut);
+                    } else {
+                        // ASCII Header: ($m,$n, Ch)
+                        if(k==0) fprintf(fpOut, "(%d,%d, Y) ", r/8, c/8);
+                        else if(k==1) fprintf(fpOut, "(%d,%d, Cb) ", r/8, c/8);
+                        else fprintf(fpOut, "(%d,%d, Cr) ", r/8, c/8);
+                        
+                        // DC 當作 skip=0
+                        fprintf(fpOut, "0 %d ", diffDC);
+                    }
+
+                    // D. RLE (AC)
+                    int zero_count = 0;
+                    for (int z = 1; z < 64; z++) {
+                        int val = quantized_block[z];
+                        if (val == 0) {
+                            zero_count++;
+                        } else {
+                            if (is_binary) {
+                                while (zero_count > 255) {
+                                    unsigned char s = 255; short v = 0; 
+                                    fwrite(&s, 1, 1, fpOut); fwrite(&v, 2, 1, fpOut);
+                                    zero_count -= 255;
+                                }
+                                unsigned char s = (unsigned char)zero_count;
+                                short v = (short)val;
+                                fwrite(&s, 1, 1, fpOut); fwrite(&v, 2, 1, fpOut);
+                            } else {
+                                fprintf(fpOut, "%d %d ", zero_count, val);
+                            }
+                            zero_count = 0;
+                        }
+                    }
+
+                    // E. EOB
+                    if (is_binary) {
+                        unsigned char s = 0; short v = 0;
+                        fwrite(&s, 1, 1, fpOut); fwrite(&v, 2, 1, fpOut);
+                    } else {
+                        fprintf(fpOut, "\n"); 
+                    }
+                }
+            }
+        }
+        
+        // 4. 計算壓縮率
+        if (is_binary) {
+            long inSize = width * absHeight * 3 + 54;
+            long outSize = ftell(fpOut);
+            printf("Compression Ratio: %.2f%%\n", (double)outSize / inSize * 100.0);
+            printf("CR (Original/Compressed): %.2f\n", (double)inSize / outSize);
+        }
+
+        free(imgBuffer);
+        fclose(fpOut);
+        printf("Method 2 Encoding Done.\n");
     }
     
     return 0;
