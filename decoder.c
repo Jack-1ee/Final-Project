@@ -571,14 +571,31 @@ int main(int argc, char *argv[]) {
         }
 
         // 寫出 BMP
+        // 讀取 dim.txt 來抓取正確的 Header 資訊
+        int d_w, d_h, d_bfSize, d_biSize, d_xpels, d_ypels, d_clr, d_imp;
+        
+        // 預設值 
+        d_bfSize = 54 + width * absHeight * 3; 
+        d_biSize = 0; d_xpels = 0; d_ypels = 0; d_clr = 0; d_imp = 0;
+
+        FILE *fpDimTest = fopen("dim.txt", "r");
+        if (fpDimTest) {
+            fscanf(fpDimTest, "%d %d %d %d %d %d %d %d", 
+                &d_w, &d_h, &d_bfSize, &d_biSize, &d_xpels, &d_ypels, &d_clr, &d_imp);
+            fclose(fpDimTest);
+        }
+
+        // 開啟輸出檔案
         FILE *fpOut = fopen(outFile, "wb");
         if(!fpOut) { perror("Output error"); return 1; }
 
+        // 設定 File Header
         BITMAPFILEHEADER fileHeader = {0};
         fileHeader.bfType = 0x4D42;
         fileHeader.bfOffBits = 54;
-        fileHeader.bfSize = 54 + width * absHeight * 3;
+        fileHeader.bfSize = d_bfSize; // [修改] 使用 dim.txt 的值
 
+        // 設定 Info Header
         BITMAPINFOHEADER infoHeader = {0};
         infoHeader.biSize = 40;
         infoHeader.biWidth = width;
@@ -586,9 +603,18 @@ int main(int argc, char *argv[]) {
         infoHeader.biPlanes = 1;
         infoHeader.biBitCount = 24;
         
+        // 填入從 dim.txt 讀到的數值，解決 Byte 39 error
+        infoHeader.biSizeImage = d_biSize; 
+        infoHeader.biXPelsPerMeter = d_xpels; 
+        infoHeader.biYPelsPerMeter = d_ypels;
+        infoHeader.biClrUsed = d_clr;
+        infoHeader.biClrImportant = d_imp;
+        
+        // 寫入 Header
         fwrite(&fileHeader, sizeof(BITMAPFILEHEADER), 1, fpOut);
         fwrite(&infoHeader, sizeof(BITMAPINFOHEADER), 1, fpOut);
 
+        // 寫入像素與 Padding (這部分不用改，照抄)
         unsigned char padBuf[3] = {0};
         int padding = (4 - (width * 3) % 4) % 4;
         for(int i=0; i<absHeight; i++){
@@ -596,7 +622,9 @@ int main(int argc, char *argv[]) {
             if(padding > 0) fwrite(padBuf, 1, padding, fpOut);
         }
         
-        fclose(fpOut); fclose(fpIn); free(imgBuffer);
+        fclose(fpOut); 
+        fclose(fpIn); 
+        free(imgBuffer);
         printf("Decoding Done: %s\n", outFile);
     }
 
