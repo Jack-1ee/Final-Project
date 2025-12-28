@@ -23,3 +23,6 @@
 !.github/**/*
 
 # (如果你說的 workflow 是指某個特定檔案，請自己加一行，例如: !workflow.txt)
+
+# 雖然我們保留 *.c，但特別排除這個暫存檔
+tempCodeRunnerFile.c
