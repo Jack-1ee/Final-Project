@@ -4,7 +4,7 @@
 #include "bmp.h"
 
 // 控制範圍0-255
-#define CLAMP(x) (((x) < 0) ? 0 : (((x) > 255) ? 255 : (unsigned char)(x)))
+#define CLAMP(x) (((x) < 0) ? 0 : (((x) > 255) ? 255 : (unsigned char)((x) + 0.5)))
 
 // 定義變數DCT 矩陣
 double dct_matrix[8][8];       // C
