@@ -1,4 +1,4 @@
-# 多媒體訊號處理期末專題 (Multimedia Signal Processing Final Project)
+# 多媒體訊號處理期末專案 (Multimedia Signal Processing Final Project)
 
 **學號:** 411172018  
 **姓名:** 李希均
