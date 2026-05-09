@@ -119,9 +119,7 @@
 
 **第三天12/27**：建立 method 1 + debug method 1 + 繼續查詢資料 (透過1D-Separable DCT加速運算)
 
-**第四天12/28**：建立 method 2 + debug method 1 + debug method 2 + 確立 workflow + 一大堆debug + 寫readme
-
-由於12/26才考完期末考第8科，故較晚開始執行期末作業，會再好好檢討自己的時間規劃。
+**第四天12/28**：建立 method 2 + debug method 1 + debug method 2 + 確立 workflow + debug + 寫readme
 
 ## 3. GitHub Artifacts
 
